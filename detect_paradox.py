@@ -1,8 +1,9 @@
-#detect simpson's paradox
+# detect simpson's paradox
 import numpy as np
 import pandas as pd
 
-def aggregate_data(df,conversion_col, treatment_col, segment_col ):
+
+def aggregate_data(df, conversion_col, treatment_col, segment_col):
     """
     takes table of individual level data and aggregates it for simpsons paradox detection.
 
@@ -21,8 +22,9 @@ def aggregate_data(df,conversion_col, treatment_col, segment_col ):
 
 
     """
-    df_ = df[[conversion_col, treatment_col, segment_col ]]
-    gb = df_.groupby([ segment_col, treatment_col] ).agg([np.sum, lambda x: len(x)] )
+    df_ = df[[conversion_col, treatment_col, segment_col]]
+    gb = df_.groupby([segment_col, treatment_col]).agg(
+        [np.sum, lambda x: len(x)])
     gb.columns = [conversion_col, "total"]
 
     return gb.reset_index()
@@ -42,21 +44,21 @@ def simpsons_paradox(df, conversion_col, total_col, treatment_col, segment_col):
     > simpsons_paradox( df, 'recovery', 'total', 'treatment', 'kidney_stone_size' )    
     """
 
-    #find global optimal:
+    # find global optimal:
     gbs = df.groupby(treatment_col).sum()
     print "## Global rates: "
-    print (gbs[conversion_col]/gbs[total_col])
+    print (gbs[conversion_col] / gbs[total_col])
     print
-    global_optimal = (gbs[conversion_col]/gbs[total_col]).argmax()
+    global_optimal = (gbs[conversion_col] / gbs[total_col]).argmax()
 
-    #check optimal via segments
-    df_ = df.set_index([segment_col,treatment_col])
-    rates = (df_[conversion_col]/df_[total_col]).unstack(-1)
+    # check optimal via segments
+    df_ = df.set_index([segment_col, treatment_col])
+    rates = (df_[conversion_col] / df_[total_col]).unstack(-1)
     print "## Local rates:"
     print rates
-    print 
-    #find the local optimals
-    local_optimals = rates.apply( lambda x: x.argmax(), 1 )
+    print
+    # find the local optimals
+    local_optimals = rates.apply(lambda x: x.argmax(), 1)
 
     if local_optimals.unique().shape[0] > 1:
         print "## Simpsons paradox not detected."
@@ -79,19 +81,20 @@ def simpsons_paradox(df, conversion_col, total_col, treatment_col, segment_col):
         return False
 
 
-if __name__ =="__main__":
-    #create some data
+if __name__ == "__main__":
+    # create some data, indentical to the data at
+    # http://en.wikipedia.org/wiki/Simpsons_paradox
     d = []
-    d += ( [ ('A', 'small',1) ]*81 )
-    d +=( [ ('A', 'small',0) ]*(87-81) )
-    d +=( [ ('B', 'small',0) ]*(270-234) )
-    d +=( [ ('B', 'small',1) ]*(234) )
-    d +=( [ ('B', 'large',1) ]*(55) )
-    d +=( [ ('B', 'large',0) ]*(80-55) )
-    d +=( [ ('A', 'large',0) ]*(263-192) )
-    d +=( [ ('A', 'large',1) ]*(192) )
+    d += ([('A', 'small', 1)] * 81)
+    d += ([('A', 'small', 0)] * (87 - 81))
+    d += ([('B', 'small', 0)] * (270 - 234))
+    d += ([('B', 'small', 1)] * (234))
+    d += ([('B', 'large', 1)] * (55))
+    d += ([('B', 'large', 0)] * (80 - 55))
+    d += ([('A', 'large', 0)] * (263 - 192))
+    d += ([('A', 'large', 1)] * (192))
 
-
-    df = pd.DataFrame(d, columns=['treatment', 'kidney_stone_size', 'recovery'])  
+    df = pd.DataFrame(
+        d, columns=['treatment', 'kidney_stone_size', 'recovery'])
     gb = aggregate_data(df, 'recovery', 'treatment', 'kidney_stone_size')
     simpsons_paradox(gb, 'recovery', 'total', 'treatment', 'kidney_stone_size')
